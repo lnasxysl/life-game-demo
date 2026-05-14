@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>一撇一捺 · Demo v0.7</title>
+<title>一撇一捺 · 中小学篇</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { background: #1a1a1a; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system,"PingFang SC","Microsoft YaHei",sans-serif; }
@@ -52,10 +52,9 @@ body { background: #1a1a1a; display: flex; justify-content: center; align-items:
 </div>
 <script>
 // ====== STATE ======
-var S={playerName:'我',family:1,health:60,parentHealth:60,talent:1,talentLabel:'普通',examBonus:0,promiseFollow:true,relationship:0,injured:false,pointsLeft:3,expBullyPaid:false,expParentsKnow:false,chengFriendship:false,chengLikedHero:false,expRevengeDone:false,chengProtect:false};
+var S={playerName:'我',family:1,health:60,parentHealth:60,talent:1,talentLabel:'普通',examBonus:0,promiseFollow:true,relationship:0,injured:false,pointsLeft:3,expBullyPaid:false,chengProtect:false,basketballInjured:false};
 var scenes={};
 
-// ====== UI ======
 function toggleAttrPanel(){
   var p=document.getElementById('attr-panel');
   if(p.classList.contains('show')){p.classList.remove('show');return;}
@@ -69,7 +68,7 @@ function toggleAttrPanel(){
 }
 function renderScene(sid){
   var sc=scenes[sid];
-  if(!sc){document.getElementById('screen').innerHTML='<div class="story-text">场景未找到: '+sid+'</div>';return;}
+  if(!sc){document.getElementById('screen').innerHTML='<div class="story-text">场景未找到</div>';return;}
   if(sc.cond&&!sc.cond()){if(sc.fallback)renderScene(sc.fallback);return;}
   var t=typeof sc.text==='function'?sc.text():sc.text||'';
   var html='<div class="fade-in"><div class="story-text">'+t+'</div>';
@@ -91,7 +90,7 @@ function renderScene(sid){
       html+='<button class="choice-btn '+d+'" data-n="'+i+'">'+l+'</button>';
     }
     html+='</div>';
-  } else { html+='<div id="choices"><button class="choice-btn" onclick="renderScene(\''+sc.next+'\')">下一页 →</button></div>'; }
+  } else if(sc.next) { html+='<div id="choices"><button class="choice-btn" onclick="renderScene(\''+sc.next+'\')">下一页 →</button></div>'; }
   html+='</div>';
   var scr=document.getElementById('screen');scr.innerHTML=html;scr.scrollTop=0;
   if(sc.choices){
@@ -105,14 +104,14 @@ function renderScene(sid){
 function resetGame(){
   S.playerName='我';S.family=1;S.health=60;S.parentHealth=60;S.talent=1;S.talentLabel='普通';
   S.examBonus=0;S.promiseFollow=true;S.relationship=0;S.injured=false;S.pointsLeft=3;
-  S.expBullyPaid=false;S.expParentsKnow=false;S.chengFriendship=false;S.chengLikedHero=false;S.expRevengeDone=false;S.chengProtect=false;
+  S.expBullyPaid=false;S.chengProtect=false;S.basketballInjured=false;
   renderScene('start');
 }
 function talentLabel(t){return ['普通','优等','学霸','天才'][t-1];}
 function familyLabel(f){return ['差','普通','小康'][f-1];}
 function tfactor(t){return [1,1.4,2,3][t-1];}
 
-// ====== START & ATTRIBUTES ======
+// ====== SCENES (from Twine structure) ======
 scenes['start']={text:'请为你的角色命名：',choices:[
   {text:'使用默认名称',eff:function(){S.playerName='我';},next:'attr_assign'},
   {text:'自定义名称',eff:function(){var n=prompt('请输入你的名字：');if(n&&n.trim())S.playerName=n.trim();},next:'attr_assign'}
@@ -126,109 +125,112 @@ mkAttr('health','个人健康',[{t:'良好',c:1,fn:function(){S.health=Math.min(
 mkAttr('parentHealth','亲人健康',[{t:'良好',c:1,fn:function(){S.parentHealth=Math.min(80,S.parentHealth+10);}},{t:'健康',c:2,fn:function(){S.parentHealth=Math.min(80,S.parentHealth+20);}}]);
 mkAttr('talent','学习天赋',[{t:'优等',c:1,fn:function(){S.talent=Math.min(4,S.talent+1);S.talentLabel=talentLabel(S.talent);}},{t:'学霸',c:2,fn:function(){S.talent=Math.min(4,S.talent+2);S.talentLabel=talentLabel(S.talent);}},{t:'天才',c:3,fn:function(){S.talent=Math.min(4,S.talent+3);S.talentLabel=talentLabel(S.talent);}}]);
 
-// ====== BIRTH & CHOOSE SCHOOL ======
+// ---- BIRTH ----
 scenes['birth']={text:function(){var fl=familyLabel(S.family);var hl=S.health>=70?'十分健康':S.health>=60?'良好':'不错';return '你出生了。\n\n外面传来嘈杂的人声，消毒水的味道飘进鼻腔，你不懂那些是什么，只知道周围的一切都陌生极了。\n\n医生抱着你，对等在门外的父母说："孩子很健康，体格（'+hl+'），一看就招人稀罕。"\n\n母亲接过你的时候，手是抖的。她低头看你，眼泪掉在你的小被子上。父亲站在旁边，笨拙地伸出食指碰了碰你的拳头，你立刻攥住了它。他愣了一下，然后笑了。\n\n（'+fl+'）的家。不大，但够住。父母不算富有，但该给的一样没少给。\n\n你什么也不懂，只是闭着眼睛，放声痛哭。\n\n哭累了，就睡了。';},next:'choose_school'};
+
+// ---- CHOOSE SCHOOL ----
 scenes['choose_school']={text:'时间一晃就过去了。\n\n你从那个只会哭的小不点，长成了一个会趴在门缝边偷听大人说话的小孩。\n\n这天晚上，客厅的灯亮到很晚。你听见父母在讨论什么"学费""重点""实验"，那些词你不是很懂，但你知道他们在说一件很重要的事。\n\n你躲在门后，探头探脑地往里看。\n\n父亲第一个发现了你。他没有责怪你偷听，反而招招手让你过来，把你抱到膝盖上。\n\n"宝贝，"他指着桌上摊开的几张宣传单，"你想去哪所小学呀？"\n\n你低头看了看那些花花绿绿的图片，抬起头，伸出了手指。',choices:[
-  {text:'省重点学校（林子航在此）',next:'route_school_key'},
+  {text:'省重点学校（家境小康）',cond:function(){return S.family>=3;},disText:'省重点（家境不足）',next:'route_school_key'},
   {text:'实验学校',next:'route_school_exp'},
   {text:'普通小学（许诺在此）',next:'school_promise_route'}
 ]};
-scenes['route_school_key']={text:function(){if(S.family>=3)return scenes.school_key.text();return scenes.school_poor_family.text();},choices:function(){if(S.family>=3)return [{text:'进入省重点线（待开发）',next:'school_key_unavailable'},{text:'体验许诺线',next:'school_promise_route'},{text:'体验实验学校线',next:'school_exp'}];return [{text:'选择普通小学',next:'school_promise_route'}];}()};
-scenes['route_school_exp']={text:function(){if(S.family>=2)return scenes.school_exp.text;return scenes.school_poor_family.text();},choices:[{text:'继续前往实验学校',cond:function(){return S.family>=2;},disText:'家境不足以选择实验学校',next:'school_exp'},{text:'选择普通小学',next:'school_promise_route'}]};
-scenes['school_poor_family']={text:'你指了指实验小学的图片。\n\n父亲愣了一下，然后笑了笑。那笑容不太自然。\n\n"那个学校啊……"他把宣传单往旁边挪了挪，"太远了，接送不方便。咱们家门口那个小学也挺好的，老师都认识，放心。"\n\n你没懂，但你没追问。父亲很少用这种语气说话。\n\n后来你才知道，那个笑容不是不想解释，是不敢解释。因为他一说"咱们家交不起那个学费"，你就会看到爸爸无能为力的样子。\n\n他不想让你看到。\n\n那天晚上，你睡了之后，父亲一个人在客厅坐了很久。灯关了，月光照在他脸上。\n\n他哭了。\n\n如果可以，他多想让你指着哪里，他就送你去哪里。'};
-scenes['school_key_unavailable']={text:'省重点·林子航线尚未完成。请先体验其他路线。',choices:[{text:'体验许诺线',next:'school_promise_route'},{text:'体验实验学校线',next:'school_exp'}]};
-scenes['school_key']={text:'"我选这个，爸爸。"\n\n你指向那张印刷最精美的宣传单——省重点学校，图片里的教学楼崭新气派，操场大得像一整片天空。\n\n父母对视了一眼，点了点头。他们没有叹气，没有说"贵了点"，只是轻轻说了一句："好，那就这个。"\n\n你不知道的是，这个选择意味着他们要从别的地方省出多少钱来。你只知道，林子航也去那里——那个从小和你一起在巷子里疯跑的、笑起来没心没肺的哥们。你在那儿有个伴，爸妈也放心。',choices:[{text:'进入省重点线（待开发）',next:'school_key_unavailable'},{text:'体验许诺线',next:'school_promise_route'},{text:'体验实验学校线',next:'school_exp'}]};
+scenes['route_school_key']={text:function(){if(S.family>=3)return scenes.school_key.text;return scenes.school_poor.text;},choices:function(){
+  if(S.family>=3)return [{text:'进入省重点线（待开发）',next:'school_key_todo'},{text:'体验许诺线',next:'school_promise_route'},{text:'体验实验学校线',next:'school_exp'}];
+  return [{text:'选择普通小学',next:'school_promise_route'}];
+}()};
+scenes['route_school_exp']={text:function(){if(S.family>=2)return scenes.school_exp.text;return scenes.school_poor.text;},choices:[
+  {text:'继续前往实验学校',cond:function(){return S.family>=2;},disText:'家境不足以选择实验学校',next:'school_exp'},
+  {text:'选择普通小学',next:'school_promise_route'}
+]};
+scenes['school_poor']={text:'你指了指实验小学的图片。\n\n父亲愣了一下，然后笑了笑。那笑容不太自然。\n\n"那个学校啊……太远了，接送不方便。咱们家门口那个小学也挺好的，老师都认识，放心。"\n\n你没懂，但你没追问。父亲很少用这种语气说话。\n\n后来你才知道，那个笑容不是不想解释，是不敢解释。因为他一说"咱们家交不起那个学费"，你就会看到爸爸无能为力的样子。他不想让你看到。\n\n那天晚上，你睡了之后，父亲一个人在客厅坐了很久。灯关了，月光照在他脸上。他哭了。\n\n如果可以，他多想让你指着哪里，他就送你去哪里。'};
+scenes['school_key']={text:'"我选这个，爸爸。"\n\n你指向那张印刷最精美的宣传单——省重点学校，图片里的教学楼崭新气派，操场大得像一整片天空。\n\n父母对视了一眼，点了点头。他们没有叹气，没有说"贵了点"，只是轻轻说了一句："好，那就这个。"\n\n你不知道的是，这个选择意味着他们要从别的地方省出多少钱来。你只知道，林子航也去那里。',choices:[{text:'进入省重点线（待开发）',next:'school_key_todo'},{text:'体验许诺线',next:'school_promise_route'},{text:'体验实验学校线',next:'school_exp'}]};
+scenes['school_key_todo']={text:'省重点·林子航线尚未完成。请先体验其他路线。',choices:[{text:'体验许诺线',next:'school_promise_route'},{text:'体验实验学校线',next:'school_exp'}]};
 
-// ====== PROMISE LINE ======
-scenes['school_promise_route']={text:'"我想和许诺一起。"\n\n你说出这句话的时候，没有犹豫。许诺是你的发小，你们一起在巷子里追过蜻蜓，一起在后院分过半块西瓜，一起在下雨天踩过水坑。你想不出不上学会见不到她的日子。\n\n父母听了，点了点头。\n\n"许诺那孩子，善良可靠，和她一起，我们也放心。"\n\n他们没再多说什么。很快，普通小学的名额就定了下来。',next:'promise_enter'};
-scenes['promise_enter']={text:'你和许诺一起踏入了普通小学。\n\n这里没有气派的教学楼，没有塑胶跑道，操场角落还有一棵歪脖子树。但老师们讲课朴实认真，课堂上有粉笔灰在阳光里飘，课间能听到走廊里此起彼伏的笑闹声。你喜欢这里。\n\n四年级的夏天，许诺在值日清理窗台。她踮着脚去够最里面那扇窗户，一不小心碰到了旁边的花盆——一株漂亮的盆栽从窗台落下去，摔得粉碎，泥土和瓷片溅了一地。\n\n你听见声响，赶忙跑过去帮忙打扫。\n\n你蹲在地上收拾碎片的时候，班主任推门进来了。她看了一眼地上的狼藉，又看了看你们俩。\n\n"怎么回事？"她的声音不大，但很严肃。\n\n许诺低着头，不敢说话，手指紧紧攥着扫把。老师的目光落到了你身上。',choices:[
-  {text:'A. "老师，是我碰掉的"（顶罪）',eff:function(){S.promiseFollow=true;},next:'promise_flower_a'},
-  {text:'B. "是许诺不小心碰掉的"（诚实偏袒）',eff:function(){S.promiseFollow=false;},next:'promise_flower_b'},
-  {text:'C. 你张了张嘴，又闭上了',eff:function(){S.promiseFollow=false;},next:'promise_flower_c'}]};
-scenes['promise_flower_a']={text:'"老师，是我碰掉的。"\n\n你的声音不大，但也没有发抖。\n\n"我在阳台边和室外的同学招手，不小心碰到了花盆。许诺看到之后，过来帮我收拾地上的泥土。"\n\n许诺愣住了，她抬头看你，嘴巴微微张开，想说什么，但没有说出口。',next:'promise_flower_a_result'};
-scenes['promise_flower_a_result']={text:'后续老师调查了监控。\n\n她把你叫到办公室，办公室里只有你们两个人。\n\n"我调监控看到了。"老师靠在椅背上，表情不像生气，"虽然你撒谎了，但……我还是想夸你。"\n\n你抬起头。\n\n"你能有勇气站出来帮许诺说话，已经像一个小男子汉了。"她的语气软了一些，"其实你们实话实说，老师也不会怪罪你们，顶多批评两句，以后注意安全。但是——"\n\n她顿了顿。\n\n"你有撒谎的勇气，也要付出撒谎的代价。盆栽二十块，明天交到班长手里。"\n\n你点了点头，走出办公室的时候，许诺等在门口。她望着你，眼眶红红的，眼里满是心疼和感谢。\n\n第二天你交了二十块罚款。\n\n暑假的时候，许诺来你家找你。她拉着你穿过两条巷子，来到一家玩具店门口，踮起脚尖从货架上拿下那个你念叨了很久的变形金刚，小跑去结了账，然后把盒子塞到你怀里。\n\n她的脸有点红。\n\n"谢谢你替我解围。这个送给你，希望你天天开心。"',next:'promise_grad_years'};
-scenes['promise_flower_b']={text:'"老师，是许诺值日的时候不小心碰掉的。"\n\n你顿了顿，看了一眼身旁低着头的许诺，又补了一句："但是这不怪她。那个花盆本来就放在窗台边上，摇摇欲坠的，谁路过都可能碰到。"',next:'promise_flower_b_result'};
-scenes['promise_flower_b_result']={text:'你和许诺两个人你看看我，我看看你。\n\n老师把你们带到了办公室，看了看你们俩，说："你们能诚实面对这件事，值得表扬。我不会批评你们打坏花盆，之后交二十块到班长那里就行。以后千万要注意安全——花盆打了是小事，如果砸到你们才是大事。"\n\n第二天，你替许诺交了十块，你们二人平摊了罚款。\n\n暑假的时候，许诺来你家找你。她拉着你穿过两条巷子，来到一家玩具店门口，踮起脚尖从货架上拿下那个你念叨了很久的变形金刚，小跑去结了账，然后把盒子塞到你怀里。\n\n她的脸有点红。\n\n"谢谢你替我说话。这个送给你，希望你会喜欢。"',next:'promise_grad_years'};
-scenes['promise_flower_c']={text:'你张了张嘴，又闭上了。\n\n许诺也不敢说话。她低垂着眼，紧紧攥着扫把，整个人像一株被雨打湿的小草。\n\n两个人就这么沉默地站着。你看着地上那些泥土和瓷片，不知道该说什么。',next:'promise_flower_c_result'};
-scenes['promise_flower_c_result']={text:'老师看着沉默的你们两个，叹了口气。\n\n她把你们带到办公室，调了监控之后，她已经知道了事情的经过。\n\n"做错事不可怕，每个人都会做错事。"她看着你们俩，"老师不怪你们。下次要诚实勇敢地说出来。之后交二十块到班长那里就行。一定要注意安全，花盆打了是小事，如果砸到你们才是大事。"\n\n第二天，你替许诺交了十块，你们平摊了罚款。\n\n暑假的时候，许诺来你家找你。她拉着你穿过两条巷子，来到一家玩具店门口，踮起脚尖从货架上拿下那个你念叨了很久的变形金刚，小跑去结了账，然后把盒子塞到你怀里。\n\n她的脸有点红。\n\n"谢谢你站在我的身边。这个送给你，希望你会喜欢。"',next:'promise_grad_years'};
+// ============ PROMISE LINE ============
+scenes['school_promise_route']={text:'"我想和许诺一起。"\n\n你说出这句话的时候，没有犹豫。许诺是你的发小，你们一起在巷子里追过蜻蜓，一起在后院分过半块西瓜，一起在下雨天踩过水坑。你想不出不上学会见不到她的日子。\n\n父母听了，点了点头。"许诺那孩子，善良可靠，和她一起，我们也放心。"\n\n他们没再多说什么。很快，普通小学的名额就定了下来。',next:'promise_enter'};
+scenes['promise_enter']={text:'你和许诺一起踏入了普通小学。\n\n这里没有气派的教学楼，没有塑胶跑道，操场角落还有一棵歪脖子树。但老师们讲课朴实认真，课堂上有粉笔灰在阳光里飘，课间能听到走廊里此起彼伏的笑闹声。你喜欢这里。\n\n四年级的夏天，许诺在值日清理窗台。她踮着脚去够最里面那扇窗户，一不小心碰到了旁边的花盆——一株漂亮的盆栽从窗台落下去，摔得粉碎，泥土和瓷片溅了一地。\n\n你蹲在地上收拾碎片的时候，班主任推门进来了。她看了一眼地上的狼藉，又看了看你们俩。\n\n"怎么回事？"她的声音不大，但很严肃。\n\n许诺低着头，不敢说话，手指紧紧攥着扫把。',choices:[
+  {text:'顶罪："老师，是我碰掉的"',eff:function(){S.promiseFollow=true;S.flowerChoice='A';},next:'promise_flower_a'},
+  {text:'诚实："是她不小心碰掉的"',eff:function(){S.promiseFollow=false;S.flowerChoice='B';},next:'promise_flower_b'},
+  {text:'沉默不语',eff:function(){S.promiseFollow=false;S.flowerChoice='C';},next:'promise_flower_c'}
+]};
+scenes['promise_flower_a']={text:'"老师，是我碰掉的。"\n\n你的声音不大，但也没有发抖。"我在阳台边和室外的同学招手，不小心碰到了花盆。许诺看到之后，过来帮我收拾地上的泥土。"\n\n许诺愣住了，她抬头看你，嘴巴微微张开，想说什么，但没有说出口。',next:'promise_flower_a_result'};
+scenes['promise_flower_a_result']={text:'后续老师调查了监控。\n\n"我调监控看到了。"老师靠在椅背上，"虽然你撒谎了，但……我还是想夸你。你能有勇气站出来帮许诺说话，已经像一个小男子汉了。"\n\n"你有撒谎的勇气，也要付出撒谎的代价。盆栽二十块，明天交到班长手里。"\n\n你走出办公室的时候，许诺等在门口，眼眶红红的。\n\n暑假的时候，许诺来你家找你。她拉着你穿过两条巷子，来到一家玩具店门口，踮起脚尖从货架上拿下那个你念叨了很久的变形金刚，塞到你怀里。"谢谢你替我解围。这个送给你，希望你天天开心。"',next:'promise_grad_a'};
+scenes['promise_flower_b']={text:'"老师，是许诺值日的时候不小心碰掉的。"你顿了顿，"但是这不怪她。那个花盆本来就放在窗台边上，摇摇欲坠的，谁路过都可能碰到。"',next:'promise_flower_b_result'};
+scenes['promise_flower_b_result']={text:'老师把你们带到了办公室："你们能诚实面对这件事，值得表扬。之后交二十块到班长那里就行。花盆打了是小事，如果砸到你们才是大事。"\n\n暑假的时候，许诺来你家找你。她拉着你去玩具店，买了那个你念叨了很久的变形金刚，塞到你怀里。"谢谢你替我说话。这个送给你，希望你会喜欢。"',next:'promise_grad_bc'};
+scenes['promise_flower_c']={text:'你张了张嘴，又闭上了。许诺也不敢说话。两个人就这么沉默地站着。\n\n老师看着沉默的你们两个，叹了口气："做错事不可怕，老师不怪你们。下次要诚实勇敢地说出来。"\n\n暑假的时候，许诺来你家找你。她拉着你去玩具店，买了那个你念叨了很久的变形金刚，塞到你怀里。"谢谢你站在我的身边。这个送给你，希望你会喜欢。"',next:'promise_grad_bc'};
+scenes['promise_grad_a']={text:'之后的两年，你们在轻松欢乐的时光中度过。\n\n转眼到了六年级毕业的夏天。\n\n一天，许诺拉着你，一路小跑到了学校后面的小山坡上。山坡上长满了野草，风一吹，像一片绿色的波浪。她弯着腰喘了好一会儿，才直起身来。\n\n"我爸说……"她咬了咬嘴唇，"如果我考不上重点中学，就只能去我妈的菜摊帮忙了。"\n\n你愣了一下。风吹过来，吹乱了许诺的头发。过了很久，她轻轻地说："不管以后在哪，我们都是最好的朋友。"',choices:[
+  {text:'"我想去一个，有你在的中学"',eff:function(){S.promiseFollow=true;S.relationship=3;S.promiseSchool=true;},next:'promise_middle_a'},
+  {text:'"不管多久，我们都是好朋友"',eff:function(){S.relationship=1;S.promiseSchool=false;},next:'promise_middle_b'}
+]};
+scenes['promise_grad_bc']={text:'之后的两年，你们在轻松欢乐的时光中度过。\n\n转眼到了六年级毕业的夏天。\n\n一天，许诺拉着你来到学校操场边那棵大树下的座椅上坐下。树叶很密，阳光从叶子的缝隙里洒下来，落在她裙子上，像碎金。\n\n"我爸说……如果我考不上重点中学，就只能去我妈妈的菜摊帮忙了。"\n\n你愣住了。悲伤的感觉从胃里升起来，堵在喉咙口。过了很久，她轻轻地说："不论以后在哪，我都是你最好的朋友。"',choices:[
+  {text:'"我想去一个，有你在的中学"',eff:function(){S.promiseFollow=true;S.relationship=3;S.promiseSchool=Math.random()<0.4;},next:'promise_middle_a'},
+  {text:'"不管多久，我们都是好朋友"',eff:function(){S.relationship=1;S.promiseSchool=false;},next:'promise_middle_b'}
+]};
+scenes['promise_middle_a']={text:'青涩的男孩不知道该说什么，沉默了半晌。\n\n风又吹过来，他听到自己的声音，比想象中要轻："我想去一个……有你在的中学。"\n\n许诺没有说话。但她低下头的时候，嘴角弯了一下。',next:function(){return S.promiseSchool?'promise_meet_school':'promise_mid_school';}()};
+scenes['promise_middle_b']={text:'你望向她，缓缓地点了点头。"不管多久，我们都是最好的朋友。"\n\n许诺笑了笑。那笑容里有一点安心，也有一点别的什么。她起身，又拉着你玩了好久。那个夏天，你们都很快乐。但那个夏天，也特别短暂。',next:'promise_mid_school'};
+scenes['promise_meet_school']={text:'转眼间暑假就过去了。\n\n你得知许诺没有考上理想的中学，心里未免有些难过。在上学的路上，你思绪万千。这时，一声熟悉的声音唤回了你的思绪。\n\n"怎么六神无主的，走路不看路可不行呀。"\n\n你赶忙回头，看到了熟悉的身影。"你……"你惊喜的说不出话。\n\n后来得知，许诺少有的反抗了家里的安排，她坚持要上学。',next:'promise_teacher_talk'};
+scenes['promise_mid_school']={text:'进入中学之后，日子和小学完全不同了。\n\n初一下学期，爸爸答应你：如果这次考试能前进五名，就给你买一部智能手机。\n\n考试那天，试卷发下来——比平时任何一次练习都要难。这时，坐在你前面的同学孙泵悄悄侧过身，一个纸团滚到了你的桌角。\n\n"我带了智能手机，可以搜答案，你要一起吗？"',choices:[{text:'撕掉纸条',next:'promise_cheat_refuse'},{text:'就答一次',next:'promise_cheat_accept'}]};
+scenes['promise_cheat_refuse']={text:'你把纸团一点一点撕碎。考试结束后，成绩不进反退。但教导处发布公告：孙泵作弊被抓。你没有同流合污，所以幸免于难。\n\n虽然过程坎坷，父亲还是把智能手机送给了你："不管你考得怎么样，我和你妈都打算给你买的。"\n\n你握着那部手机，觉得它比想象中沉很多。',next:'promise_teacher_talk'};
+scenes['promise_cheat_accept']={text:'你接过了纸条。成绩出来——你进步了。但教导处发布公告：孙泵供出了你。\n\n回到家，没有风暴。父亲坐在桌边喝酒，母亲默默掉眼泪。那种沉默比任何责骂都让人难受。\n\n当晚你在枕头下发现了一部崭新的智能手机。你哭了。你发誓再也不会让父母伤心了。',next:'promise_teacher_talk'};
+scenes['promise_teacher_talk']={text:function(){return '初二上学期，班主任把你叫到了办公室。\n\n"你和许诺走得太近了，"老师开门见山地说，"我不是要批评你，我是想告诉你——早恋对你们两个都不好。你们家庭条件都不好，学习是你们唯一的出路。"\n\n你回到家，想了很久。';},choices:[
+  {text:'理解老师，潜心学习',eff:function(){S.examBonus+=25;S.relationship=1;S.teacherChoice=1;},next:'promise_choice_learn'},
+  {text:'继续我行我素',eff:function(){S.relationship=2;S.parentHealth=Math.max(0,S.parentHealth-5);S.teacherChoice=2;},next:'promise_choice_rebel'},
+  {text:'找许诺坦白，一起面对',eff:function(){S.examBonus+=10;S.relationship=3;S.teacherChoice=3;},next:'promise_choice_confess'}
+]};
+scenes['promise_choice_learn']={text:'许诺其实也被班主任叫去谈了话。那之后，你逐渐减少了和她见面。走廊里遇到的时候，你们还是会打招呼，但不再并肩了。\n\n你们还是好朋友。只是互相都以学业为重了。\n\n（+25%重点率）',next:'promise_bball_gate'};
+scenes['promise_choice_rebel']={text:'许诺其实也被班主任叫去谈了话。晚自习下课之后，你在教学楼门口等到了她。放学的人潮从你们身边涌过，你牵起了她的手。\n\n"许诺。我喜欢你，我们在一起吧。"\n\n她愣住了，眼泪止不住地流了下来。她拼命点头。',next:'promise_bball_gate'};
+scenes['promise_choice_confess']={text:'许诺其实也被班主任叫去谈了话。晚自习下课之后，你约了她一起回家。\n\n路边的路灯把你们的影子拉得很长。你停下来，转身面对她。\n\n"老师找到我谈话了，她说让我减少和你的交往。"\n\n许诺眼里的光仿佛黯淡了一瞬。"但是——我还是放不下你。我知道我现在还不够成熟，但是我想和你一起走下去。我想和你一起进入高中。我想和你有光明的未来。"\n\n许诺的眼泪终于决堤了。她哭得没了力气，整个人靠在你身上。回家的路很短，但又很长。\n\n（+10%重点率）',next:'promise_bball_gate'};
 
-// -- 六年级毕业（自动路由） --
-scenes['promise_grad_years']={text:'之后的两年，你们在轻松欢乐的时光中度过。\n\n转眼到了六年级毕业的夏天。',next:'promise_grad_routes'};
-scenes['promise_grad_routes']={text:function(){return S.promiseFollow?'许诺拉着你，一路小跑到了学校后面的小山坡上。山坡上长满了野草，风一吹，像一片绿色的波浪。她弯着腰喘了好一会儿，才直起身来。\n\n她的表情不像平时那么轻松。\n\n"我爸说……"她咬了咬嘴唇，"如果我考不上重点中学，就只能去我妈的菜摊帮忙了。"\n\n你愣了一下，心里像被什么轻轻撞了一下。\n\n你们都没有说话。风吹过来，吹乱了许诺的头发。她抬手拢了拢，又放下。\n\n过了很久，她轻轻地说：\n\n"不管以后在哪，我们都是最好的朋友。"':'许诺拉着你来到学校操场边那棵大树下的座椅上坐下。树叶很密，阳光从叶子的缝隙里洒下来，落在她裙子上，像碎金。\n\n她欲言又止了好几次，最终缓缓开口。\n\n"我爸说……如果我考不上重点中学，就只能去我妈妈的菜摊帮忙了。"\n\n你愣住了。悲伤的感觉从胃里升起来，堵在喉咙口。你缓缓抬起头，望着头顶的树叶，仿佛在避免什么落下来。\n\n你们都没有说话。风吹过来，吹乱了许诺的头发，也吹乱了你的心。\n\n过了很久，她轻轻地说：\n\n"不论以后在哪，我都是你最好的朋友。"';},choices:[
-  {text:'A. "我想去一个，有你在的中学"',eff:function(){S.promiseFollow=true;S.relationship=3;},next:'promise_middle_a'},
-  {text:'B/C. "不管多久，我们都是最好的朋友"',eff:function(){S.relationship=1;},next:'promise_middle_bc'}]};
-scenes['promise_middle_a']={text:'青涩的男孩不知道该说什么，沉默了半晌。\n\n风又吹过来，他听到自己的声音，比想象中要轻：\n\n"我想去一个……有你在的中学。"\n\n许诺没有说话。\n\n但她低下头的时候，嘴角弯了一下。',next:'promise_meet_school'};
-scenes['promise_middle_bc']={text:'你望向她，缓缓地点了点头。\n\n"不管多久，我们都是最好的朋友。"\n\n许诺笑了笑。那笑容里有一点安心，也有一点别的什么。\n\n她起身，又拉着你玩了好久。那个夏天，你们都很快乐。\n\n但那个夏天，也特别短暂。',next:'promise_mid_school'};
-scenes['promise_meet_school']={text:'转眼间暑假就过去了。\n\n你得知许诺没有考上理想的中学，心里未免有些难过。在上学的路上，你思绪万千，也许中学生活里很难经常见到她。这时，一声熟悉的声音唤回了你的思绪。\n\n"怎么六神无主的，走路不看路可不行呀。"\n\n你赶忙回头，看到了熟悉的身影。\n\n"你……"你惊喜的说不出话。\n\n后来得知，许诺少有的反抗了家里的安排，她坚持要上学，不知道是努力为了学习的前途，还是……',next:'promise_teacher_talk'};
+// -- BASKETBALL --
+scenes['promise_bball_gate']={text:function(){var t='初三下半年，隔壁班递来了一封篮球赛战书。\n\n比赛那天——';t+=(S.promiseSchool&&S.relationship>=2)?'你做完热身，抬头看到了许诺。她站在人群里，穿着一件米白色的连衣裙。她注意到你的目光，朝你微微一笑。\n\n你们对视的瞬间，你出了神：是努力拼搏打出风采给她看，还是怕她担心收着点打？':'全场爆满，老师也搬了椅子坐在场边。\n\n比赛开始了，你作为首发得分后卫登场。';return t;},next:function(){return (S.promiseSchool&&S.relationship>=2)?'promise_bball_with_her':'promise_bball_no_her';}()};
+scenes['promise_bball_with_her']={text:'',choices:[{text:'努力拼搏，打出风采',next:'promise_bball_showoff'},{text:'不想让她担心',next:'promise_bball_care'}]};
+scenes['promise_bball_showoff']={text:function(){var r=Math.random();S.basketballInjured=r<0.4;if(S.basketballInjured){S.health=Math.max(0,S.health-5);return '你在场上拼尽全力。但超负荷运动让你的大腿肌肉痉挛——一阵剧痛传遍全身，你倒在地上。\n\n许诺急得掉了眼泪，她挤进人群蹲在你旁边，手抖得不知碰哪里。在她眼里，你好不好看、赢不赢，都不重要。她只在乎你有没有事。\n\n你们优势够大，最后险胜。\n\n（个人健康-5）';}return '你在赛场上尽情挥洒，攻防交替尽显从容，仿佛无所不能。最终大优势拿下比赛。\n\n全场为你欢呼。但人声鼎沸中，你只望向了她。';},next:'promise_exam'};
+scenes['promise_bball_care']={text:'你想让她看到你帅气的一面，但你更不想她担心。你打得专注而不勉强，稳稳带着队伍赢了。\n\n比赛结束，你望向观众席。许诺歪了歪头，冲你笑了笑。',next:'promise_exam'};
+scenes['promise_bball_no_her']={text:'',choices:[{text:'拼尽全力',next:'promise_bball_hard'},{text:'友谊第一',next:'promise_bball_safe'}]};
+scenes['promise_bball_hard']={text:function(){S.basketballInjured=Math.random()<0.3;if(S.basketballInjured){S.health=Math.max(0,S.health-5);return '你全力拼搏。大腿肌肉紧张过度，痉挛剧痛让你被迫下场。但比赛还是赢了。\n\n（个人健康-5）';}return '你努力拼搏，攻防两端发挥出色，带领队伍拿下比赛。';},next:'promise_exam'};
+scenes['promise_bball_safe']={text:function(){S.basketballInjured=Math.random()<0.1;if(S.basketballInjured){S.health=Math.max(0,S.health-5);return '虽然你收着打，但一次拼抢中还是扭伤了脚踝。你咬牙坚持到了最后。比赛赢了。\n\n（个人健康-5）';}return '你保持良好体力，攻防到位，累得精疲力尽但最终险胜。';},next:'promise_exam'};
 
-// -- 中学：作弊事件（仅无许诺陪伴时触发） --
-scenes['promise_mid_school']={text:function(){var t='进入中学之后，日子和小学完全不同了。\n\n翻倍的课时、严格的考勤、越来越难的作业……你开始觉得有些吃力。\n\n';t+='许诺没有考上。你一个人走着，偶尔会想起她。\n\n';t+='初一下学期，爸爸答应你：如果这次考试能前进五名，就给你买一部智能手机。\n\n你心动了。\n\n考试那天，试卷发下来——比平时任何一次练习都要难。\n\n这时，坐在你前面的同学孙泵悄悄侧过身，一个纸团滚到了你的桌角。\n\n你展开一看，上面潦草地写着几行字：\n\n"我带了智能手机，可以搜答案，你要一起吗？"';return t;},choices:[{text:'撕掉纸条，守住底线',next:'promise_cheat_refuse'},{text:'就答一次，没人知道',next:'promise_cheat_accept'}]};
-scenes['promise_cheat_refuse']={text:'你盯着那行字看了很久。手指在纸团上捏了又捏。你想起爸爸答应你时的笑容。\n\n你把纸团一点一点撕碎，塞进了铅笔盒的最底层。\n\n考试结束后几天，成绩出来了——不进反退。\n\n但就在同一天，教导处突然发布了一则公告：本次考试发现部分学生使用手机作弊，孙泵的名字赫然在列。\n\n你没有同流合污，所以幸免于难。',next:'promise_phone_gift'};
-scenes['promise_cheat_accept']={text:'你挣扎了一下，还是接过了纸条。\n\n考试结束后几天，成绩出来了——你的名次前进了很多。爸爸很高兴，给你买了智能手机。\n\n你很快乐。\n\n但就在同一天，教导处发布公告：孙泵的名字赫然在列。\n\n你的名字，也在列。',next:'promise_cheat_caught'};
-scenes['promise_cheat_caught']={text:'你做好了挨骂的心理准备。但家里没有风暴。父亲坐在桌边喝酒，母亲默默掉眼泪。没有人骂你。可那种沉默比任何责骂都让人难受。\n\n当晚，你回到卧室，掀开枕头——下面是一部崭新的智能手机。你的眼泪终于涌了出来。你明白了：无论考试结果如何，父母都愿意给你买。让他们难过的不是你考砸了，是你选择了作弊。\n\n你蹲在床边，哭得喘不上气。\n\n（亲人健康-5）',next:'promise_phone_gift'};
-scenes['promise_phone_gift']={text:'虽然过程坎坷，你还是得到了智能手机。你添加了班上同学的联系方式，也加了许诺的。虽然以后见面少了，但屏幕上那些小小的文字气泡，让距离变得没有那么遥远。',next:'promise_teacher_talk'};
+// -- EXAM --
+scenes['promise_exam']={text:function(){var t='时间一转眼就过去了三年。中学时代迎来了落幕。\n\n今天就是中考了。';if(S.promiseSchool&&S.relationship>=2&&S.teacherChoice!==1){t+='\n\n许诺的声音从身后传来："我可能去不了重点高中了……"她望着你，等你的选择。';}return t;},choices:function(){if(S.promiseSchool&&S.relationship>=2&&S.teacherChoice!==1){return[{text:'拼搏，迈向重点高中',next:'promise_go_key'},{text:'我陪你去普通高中',next:'promise_go_normal'}];}return[{text:'拼搏，迈向重点高中',next:'promise_exam_key'},{text:'进入普通高中',next:'promise_ending'}];}()};
+scenes['promise_go_key']={text:'"我想报考重点试试。"你缓慢的说出自己的答复，你怕她失望，没敢看她。\n\n许诺愣了一下，然后笑了。那笑容里有信任，也有不舍。\n\n"嗯，我相信你。"\n\n你转身走进了考场。你知道，有一个人在等你。',next:'promise_exam_key'};
+scenes['promise_go_normal']={text:'"我和你一起去普高。"你摸了摸她的头，一把将她搂在怀里。\n\n许诺的眼泪无声地流了下来。"你不后悔吗……以你的成绩……"\n\n"有什么好后悔的。高中在哪都能上，但有些东西错过了就没了。"',next:'promise_ending'};
+scenes['promise_exam_key']={text:function(){var tf=tfactor(S.talent),hf=Math.min(1,S.health/60),p=Math.round(35*tf*hf+5+S.examBonus);return '你决定报考重点高中。\n\n天赋系数：'+tf+'\n健康修正：'+hf.toFixed(2)+'\n环境加成：+5\n选择加成：+'+S.examBonus+'\n\n预估成功率：'+p+'%';},choices:[{text:'查看结果',next:'promise_ending'}]};
+scenes['promise_ending']={text:function(){var e='';if(S.relationship>=2&&S.promiseSchool)e='许诺一直陪在你身边。这份从童年开始的感情，还在继续。';else if(S.promiseFollow)e='许诺和你各自努力着。未来的路还长。';else e='你没有许诺的消息了。但她一定也在某个地方好好地生活着。';return '【许诺线 · 第一章完】\n\n'+e+'\n\n未完待续……';},isEnding:true};
 
-// -- 班主任谈话 --
-scenes['promise_teacher_talk']={text:function(){var t='中学的生活和小学截然不同了。翻倍的课时、严格的考勤、越来越难的作业……你每天都在和作业、考试打交道。\n\n初二上学期的一天，班主任把你叫到了办公室。\n\n"你和许诺走得太近了，"老师开门见山地说，"我们这帮老师都看在眼里。"\n\n她靠在椅背上："我不是要批评你，我是想告诉你——早恋对你们两个都不好。你们家庭条件都不好，学习是你们唯一的出路。"';if(S.promiseFollow)t+='\n\n你回到家，想了很久。许诺就在校园的某个角落里。你只要想见，就能见到。';return t;},choices:[
-  {text:'理解老师，潜心学习',eff:function(){S.examBonus+=25;S.relationship=1;},next:'promise_teacher_1'},
-  {text:'继续我行我素',eff:function(){S.relationship=2;S.parentHealth=Math.max(0,S.parentHealth-5);},next:'promise_teacher_2'},
-  {text:'找许诺坦白，一起面对',eff:function(){S.examBonus+=10;S.relationship=3;},next:'promise_teacher_3'}]};
-scenes['promise_teacher_1']={text:'许诺其实也被班主任叫去谈了话。那之后，你逐渐减少了和她见面。走廊里遇到的时候，你们还是会打招呼、会微笑，但不再像以前那样并肩了。她明白你的选择。\n\n你们还是好朋友。只是互相都以学业为重了。\n\n（+25%重点率）',next:'promise_bball_gate'};
-scenes['promise_teacher_2']={text:'许诺其实也被班主任叫去谈了话。她没告诉你老师说了什么，但她一直在等着看你的态度。\n\n而你，没有让她等太久。\n\n晚自习下课之后，你在教学楼门口等到了她。放学的人潮从你们身边涌过，你牵起了她的手。她的手凉凉的，微微缩了一下，但没有挣脱。\n\n"许诺。我喜欢你，我们在一起吧。"\n\n她愣住了。几秒之后，脸颊开始发烫，从脸一直红到耳根。她说不出话，眼泪却止不住地流了下来。她拼命点头。\n\n（亲人健康-5）',next:'promise_bball_gate'};
-scenes['promise_teacher_3']={text:'许诺其实也被班主任叫去谈了话。她忐忑了好几天，不知道你会怎么做。\n\n晚自习下课之后，你约了她一起回家。路边的路灯把你们的影子拉得很长。走了一段路之后，你停下来，转身面对她。\n\n"许诺。"她看着你，眼神里有一点紧张。\n\n"老师找到我谈话了，"你吸了一口气，"她说，让我减少和你的交往。"许诺眼里的光仿佛黯淡了一瞬。\n\n你继续说："但是——我还是放不下你。我知道我现在还不够成熟，但是我想和你一起走下去。我想和你一起进入高中。我想和你有光明的未来。"\n\n许诺的眼泪终于决堤了。她哭得没了力气，整个人靠在你身上。\n\n回家的路，很短，但又很长。\n\n（+10%重点率，许诺可考入普通高中）',next:'promise_bball_gate'};
-
-// ====== BASKETBALL ======
-scenes['promise_bball_gate']={text:function(){var t='初三下半年，中考的脚步声越来越近。教室里的气氛一天比一天紧张。\n\n就在这时候，隔壁班递来了一封篮球赛战书。年轻人哪有不狂的？全班当场应战。\n\n比赛那天，你做完热身——';if(S.promiseFollow&&S.relationship>=2){t+='你看到了许诺。她站在人群里，穿着一件米白色的连衣裙，像一株安静的白杨。她注意到你的目光，朝你微微一笑。\n\n你们对视的瞬间，你出了神：是努力拼搏打出风采给她看，还是怕她担心收着点打？';} else if(S.promiseFollow){t+='你在人群里看到了许诺。她朝你挥了挥手。';} else {t+='全场爆满，老师也搬了椅子坐在场边。';}return t;},next:function(){return (S.promiseFollow&&S.relationship>=2)?'promise_bball_with_her':'promise_bball_alone';}()};
-scenes['promise_bball_with_her']={text:'比赛开始了，你作为首发得分后卫登场。',choices:[{text:'努力拼搏，拿出最帅的一面给她看',next:'promise_bball_showoff'},{text:'我不想让她担心',next:'promise_bball_care'}]};
-scenes['promise_bball_showoff']={text:function(){var r=Math.random();S.injured=r<0.4;if(S.injured){S.health=Math.max(0,S.health-5);return '你在场上拼尽全力。但超负荷运动让你的大腿肌肉痉挛——一阵剧痛传遍全身，你倒在地上。许诺急得掉了眼泪，她挤进人群蹲在你旁边，手抖得不知碰哪里。在她眼里，你好不好看、赢不赢，都不重要。她只在乎你有没有事。你们优势够大，最后险胜。\n\n（个人健康-5）';}return '你在赛场上尽情挥洒，攻防交替尽显从容，仿佛无所不能。最终大优势拿下比赛。全场为你欢呼。但人声鼎沸中，你只望向了她。';},next:'promise_exam_door'};
-scenes['promise_bball_care']={text:'你想让她看到你帅气的一面，但你更不想她担心。你打得专注而不勉强，稳稳带着队伍赢了。比赛结束，你望向观众席。许诺歪了歪头，冲你笑了笑。',next:'promise_exam_door'};
-scenes['promise_bball_alone']={text:'比赛开始了，你作为首发得分后卫登场。',choices:[{text:'拼尽全力，不留遗憾',eff:function(){S.injured=Math.random()<0.3;},next:'promise_bball_alone_hard'},{text:'友谊第一，比赛第二',next:'promise_bball_alone_safe'}]};
-scenes['promise_bball_alone_hard']={text:function(){if(S.injured){S.health=Math.max(0,S.health-5);return '你全力拼搏。大腿肌肉紧张过度，痉挛剧痛让你被迫下场。但比赛还是赢了。\n\n（个人健康-5）';}return '你努力拼搏，攻防两端发挥出色，带领队伍拿下比赛。';},next:'promise_exam_door'};
-scenes['promise_bball_alone_safe']={text:'你保持良好体力，攻防到位，累得精疲力尽但最终险胜。',next:'promise_exam_door'};
-
-// -- 中考 --
-scenes['promise_exam_door']={text:function(){var t='时间一转眼就过去了三年。中学时代迎来了落幕。\n\n今天就是中考了。你走出考场，前方是未知的路。';if(S.relationship>=2&&S.promiseFollow){t+='\n\n许诺的声音从身后传来："我可能去不了重点高中了……"她望着你，等你的选择。';}return t;},choices:function(){if(S.relationship>=2&&S.promiseFollow){return [{text:'拼搏，迈向重点高中',next:'promise_go_key'},{text:'我陪你去普通高中',next:'promise_go_normal'}];}return [{text:'拼搏，迈向重点高中',next:'promise_exam_key'},{text:'进入普通高中（一定能进）',next:'promise_ending'}];}()};
-scenes['promise_go_key']={text:'你看着她，深吸了一口气。\n\n"我会努力的。"你的声音不大，但很坚定，"为了我也为了你。我们一起。"\n\n许诺愣了一下，然后笑了。那笑容里有信任，也有不舍。\n\n"嗯，我相信你。"阳光照在她脸上，她的眼眶有点红，但她在努力不哭。\n\n你转身走进了考场。你知道，有一个人在等你。',next:'promise_exam_key'};
-scenes['promise_go_normal']={text:'你看着她，心里已经做了决定。\n\n"我陪你去。"\n\n许诺愣住了。"你……你不后悔吗？以你的成绩……"\n\n"有什么好后悔的。"你打断了她，"高中在哪都能上，但有些东西错过了就没了。"\n\n许诺低下头，眼泪一滴一滴掉在地上。\n\n"谢谢你。"\n\n她抬起头，擦了擦眼泪，朝你笑了笑。那笑容在清晨的阳光里，很好看。',next:'promise_ending'};
-scenes['promise_exam_key']={text:function(){var tf=tfactor(S.talent),hf=Math.min(1,S.health/60),p=Math.round(35*tf*hf+5+S.examBonus);return '你决定拼搏。\n\n天赋系数：'+tf+'\n健康修正：'+hf.toFixed(2)+'\n环境加成：+5\n选择加成：+'+S.examBonus+'\n\n预估成功率：'+p+'%\n\n（最终版本将隐藏此概率）';},choices:[{text:'查看结果',next:'promise_ending'}]};
-scenes['promise_ending']={text:function(){var e='';if(S.relationship>=2&&S.promiseFollow)e='许诺一直陪在你身边。这份从童年开始的感情，还在继续。';else if(S.promiseFollow)e='许诺和你各自努力着。未来的路还长。';else e='你没有许诺的消息了。但她一定也在某个地方好好地生活着。';return '【许诺线 · 第一章完】\n\n'+e+'\n\n未完待续……';},isEnding:true};
-
-// ====== EXPERIMENT LINE ======
+// ============ EXPERIMENT SCHOOL LINE ============
 scenes['school_exp']={text:'"我选这个，爸爸。"\n\n你指了指实验小学的宣传页。校门不大，但里面的设施看起来该有的都有。父母看了看，觉得条件也不错，学费也比省重点便宜不少。\n\n他们点了点头，但眼神里有一丝犹豫。\n\n"这个学校也挺好的，"母亲摸了摸你的头，"就是……许诺不在这儿。"\n\n你没说话。你还不太懂"以后见不到了"是什么感觉，只是隐约觉得，少了一个人，心里空了一块。',next:'exp_enter'};
-scenes['exp_enter']={text:'你踏入了实验学校的大门。\n\n这里的教学楼比普通小学新一些，操场也大一些，但你不觉得兴奋。没有许诺在身边，一切都不一样了。课间没有人拉着你去小卖部，放学没有人等你一起回家。你一个人吃饭，一个人走路，一个人在操场的角落看别人三三两两地聊天。\n\n你试着融入过。但在这里，交朋友不是靠一起追蜻蜓、分西瓜就能完成的事。同学们已经形成了自己的圈子，你插不进去。\n\n你也不强求。日子就这么一天天过去。你习惯了独来独往，习惯了把话咽回肚子里。\n\n直到有一天放学的路上——',next:'exp_bully'};
-scenes['exp_bully']={text:'放学的路上，三个人拦住了你。为首的那个高个子古铜色的脸上带着一丝不屑，胸前的校徽写着"叶伏升"："新来的？十块保护费。"\n\n十块钱——妈妈给你吃午饭的。',choices:[{text:'反抗，拼了',eff:function(){S.health=Math.max(0,S.health-5);},next:'exp_fight'},{text:'给他们钱',eff:function(){S.expBullyPaid=true;},next:'exp_pay'}]};
-scenes['exp_fight']={text:'你拳头紧握，一下子撞在叶伏升胸口上。他气急败坏地一把推开你，剩下两个人一拥而上。\n\n你还是少年人，身体都没长开，正常情况下是济不过他们三个的。但你死死护住自己的钱。\n\n打闹声引来了路人。叶伏升见势不妙，猛地掠过你的钱，吹了一口哨子，三个人一涌而散。\n\n你蹲在地上，嘴角破了一点皮，衣衫惨惨的。\n\n（个人健康-5）',next:'exp_parents_see'};
-scenes['exp_pay']={text:'你从口袋里抖抖索索地掏出那张已经被捏得有些发软的十元钱。叶伏升接过钱，看也没看，往口袋里一塞，嬉皮笑脸地笑了笑："懂事。"\n\n他们转身走了，头也不回地甩了一句："我们会罩着你的。"\n\n你站在原地，攥紧了空荡荡的手心。',next:'exp_home_choice'};
-scenes['exp_home_choice']={text:'在回去的路上，你一直在想——要不要把这件事告诉父母。想了一路，直到推开家门。父亲正坐在桌前看报纸。母亲在厨房忙着晚饭。\n\n你站在客厅门口，张了张嘴。',choices:[{text:'告诉父母，让学校处理',next:'exp_school_report'},{text:'先不说了，应该过去了',eff:function(){S.expParentsKnow=false;},next:'exp_silent_hurt'}]};
-scenes['exp_silent_hurt']={text:'你没有告诉父母。过了几天，叶伏升又来了。这次你不再给了。你又被打了一顿。这次比上次更狠。你拖着伤回到家，根本藏不住。父亲一眼就看到了。',next:'exp_parents_see'};
-scenes['exp_parents_see']={text:'你拖着浑身泥土的身子回到家。身上青一块紫一块，根本藏不住。\n\n父亲一眼就看到了。他站起来，报纸掉在地上。他没说话，拿起打火机点了一根烟——点了三次才点着，然后猛地把打火机摔在了地上。\n\n"谁打的？"你从没见过他那种表情。母亲拿着棉签走过来，让你坐下，一边给你擦伤口一边掉眼泪。',next:'exp_school_report'};
-scenes['exp_school_report']={text:'父亲把这件事告知了学校和老师。很快，你、你的父亲、叶伏升等人、还有他们的家长，全被叫到了学校。那几个孩子的家长当着所有人的面，对着自家孩子就是一顿拳打脚踢。打完，逼着他们给你道歉。\n\n他们咬牙切齿地说了"对不起"。学校各打五十大板，和了稀泥。\n\n结束后，你跟着父亲走出校门。他回头看了你一眼："孩子，以后如果再被欺负了，一定告诉我。如果还有下次——我一定饶不了他们。"那一刻你看见他眼睛里带着愤怒的火焰。',next:'exp_resentment'};
-scenes['exp_resentment']={text:'第二天上学，叶伏升等人看你的眼神不带任何感情。你知道这事没完。但你没有证据，他们暂时还没做什么。可如果什么都不做，他们迟早会再来找你。',choices:[{text:'找老师，让老师远远跟着保护',next:'exp_teacher_protect'},{text:'让父母放学后来接自己',next:'exp_parent_protect'}]};
-scenes['exp_teacher_protect']={text:'老师答应了。第三天放学回家的路上，叶伏升等人果然又出现了。老师远远地跟在你身后，看到情况立刻赶了过来。随即，老师将此事报告给了校方。\n\n校方终于坐不住了。强制劝退叶伏升等三人，加装监控，安排多辆校车每天护送孩子们回家。\n\n你站在校门口，看着那辆新校车缓缓驶来。车上坐满了和你差不多大的孩子，有人冲你招手。你想了想，也招了招手。',next:'exp_time_pass'};
-scenes['exp_parent_protect']={text:'父母每天都准时来接你放学。叶伏升等人等了好几天，一直没找到机会。终于有一天，体育课上课前，他们在楼道里堵住了你。你们厮打的声音引来了老师。老师调取监控后报告给了校方。\n\n校方强制劝退叶伏升等三人，加装监控，安排校车。\n\n你站在校门口，看着那辆新校车缓缓驶来。车上坐满了和你差不多大的孩子，有人冲你招手。你想了想，也招了招手。',next:'exp_time_pass'};
-scenes['exp_time_pass']={text:'日子一天天过去。那件事之后，再也没有人找过你的麻烦。校园恢复了平静。\n\n但你始终没有交到真正的朋友。不是没有人试图接近你——班上几个男生找你打过篮球，同桌偶尔会借你笔记。但你发现自己已经不知道该怎么和别人走近了。你习惯了独处。\n\n小学的时光就在这种不冷不热的状态中流走了。\n\n你升入了实验学校的中学部。',next:'exp_cheng_intro'};
-scenes['exp_cheng_intro']={text:'霸凌事件过后，你的生活回归了平静。但你依然没有要好的朋友。你独来独往，不主动和任何人说话。\n\n但你注意到一个人。一个女生。她和你很像——或者说，她像小时候的你。\n\n她叫程小涵。',next:'exp_cheng_errand'};
-scenes['exp_cheng_errand']={text:'有一天课间，你靠在走廊的墙边喝水。一个声音从不远处传来："喂，小涵，你帮我去买点东西。"一个看起来像"大姐大"的女生正朝程小涵招手。程小涵点了点头，接过钞票，转身朝小卖部的方向走去。\n\n你皱了皱眉。那种感觉你太熟悉了——被支使、被拿捏、因为不知道怎么拒绝所以只能点头。\n\n你没有立刻行动。你看着那个傻丫头的背影拐过走廊尽头，然后放下水杯，不紧不慢地跟了上去。',choices:[{text:'直接问："你为什么要帮别人买东西呢？让她们自己去。"',next:'exp_cheng_ask'},{text:'逗一下她："你帮我也买点东西。"',next:'exp_cheng_tease_ask'}]};
-scenes['exp_cheng_ask']={text:'她吓了一跳，抬起头看清是你之后，声音微微有些发抖。"你……你有什么事情吗？我……我叫程小涵。"\n\n"你为什么要帮别人买东西呢？让她们自己去。"\n\n"因为……"她低头想了半天，"因为她们是我同学……我不好意思拒绝。"\n\n你摸了摸后脑勺。这丫头真是个讨好型人格。\n\n"跟我来。"你让她带上东西跟你走。她不知道你要干嘛，但还是抱着那包东西，小碎步跟在你后面。',next:'exp_cheng_confront'};
-scenes['exp_cheng_tease_ask']={text:'她吓了一跳，抬起头看清是你之后，声音微微有些发抖。"你……你有什么事情吗？我……我叫程小涵。"\n\n"你帮我也买点东西。"\n\n她脸色有些为难，但还是点了点头。"你想买什么呢？……而且你叫什么名字还没说。"\n\n你摸了摸后脑勺。这傻丫头，明明都为难成这样了，还是答应下来了。真是……让人放心不下。',next:'exp_cheng_advice'};
-scenes['exp_cheng_confront']={text:'你带着她来到那几个"大姐大"面前。你把那包东西随手往桌上一扔。然后你看着她们，语气平静但不留情面："你们没长腿吗？下次自己去买。"\n\n那几个女生被你镇住了。说完，你转身就走。程小涵跟在你身后，小跑着才跟上你的步子。走到教室门口的时候，你停下来："我开的这个好头，自己把握住。"',next:'exp_cheng_change'};
-scenes['exp_cheng_advice']={text:'你让她把那袋东西放在旁边的台阶上。然后你看着她的眼睛："你不想做的事情，就不要接。你这样强迫自己去讨好别人，伤害的只会是你自己。"\n\n程小涵愣住了。"下次别人让你干嘛的时候，试着拒绝。你是为了自己而活，不是为了别人。"\n\n你的话像一颗小石头扔进了她心里那潭死水里。她站在原地，很久没有说话。等你走远了，她才发现——她甚至不知道你什么时候离开的。',next:'exp_cheng_change'};
-scenes['exp_cheng_change']={text:'几天后的课间，你又看到了同样的场景。那几个"大姐大"又找到了程小涵。但这一次——"我不去。"程小涵的声音不大，但没有发抖，"你们自己去吧。"\n\n你远远看着这一幕，心里涌上一阵欣慰。她做到了。\n\n但那帮"大姐大"脸上的表情开始变得难看起来。',choices:[{text:'亲自出马，制止她们',eff:function(){S.chengProtect=true;},next:'exp_cheng_protect'},{text:'让校方处理',eff:function(){S.chengProtect=false;},next:'exp_cheng_report'}]};
-scenes['exp_cheng_protect']={text:'你两步并一步赶了过去。领头的"大姐大"右手高高扬起，眼看就要一巴掌扇下来。程小涵闭上眼，缩着肩膀。\n\n但预想中的疼痛没有来。她睁开眼——你的身影挡在她面前，右手稳稳地握住了那只即将落下的手腕。"够了。"\n\n程小涵看着你的背影，眼眶忽然就湿了。从来没有人替她挡过什么。而今天，有人挡在了她前面。',next:'exp_rumors'};
-scenes['exp_cheng_report']={text:'你看了一眼那帮人的架势，转身去了教师办公室。老师赶到的时候，"大姐大"正揪着程小涵的衣领。老师一声呵斥，几个人立刻松了手。\n\n事后，老师把那几个人叫到办公室谈了话。从此以后，她们再也没找过程小涵的麻烦。程小涵后来知道了是你去叫的老师。她没有说什么，但从那天起，她每次在走廊上遇到你，都会冲你笑一下。',next:'exp_rumors'};
-
-// -- 舆论 × 冬天道歉 --
-scenes['exp_rumors']={text:'事情很快就结束了，她们打算动手的事情被学校好顿处罚，之后也不再有人强迫任何人做他不想做的事了。\n\n但这件事也让学校里传开了舆论，说独来独往的你和程小涵有情况。\n\n你没当回事。嘴长在别人身上，你管不了。',next:'exp_cheng_apology'};
-scenes['exp_cheng_apology']={text:'初三上的冬天。程小涵在走廊上叫住了你。\n\n她比之前自信了很多，不再低着头了。\n\n"关于那些传言……对不起，给你添麻烦了。"',choices:[{text:'"还好吧，我不在意。你状态好多了。"',next:'exp_cheng_growth'},{text:'"托你的福我可惨了，大家都说我被你追。"',next:'exp_cheng_tease'}]};
-scenes['exp_cheng_growth']={text:'"还好吧，我不在意别人放什么屁。你倒是比之前好了很多。"\n\n她笑了。"谢谢你，是你改变了我的人生。"\n\n她深吸一口气："我喜欢你，请和我在一起。"',choices:[{text:'直接拒绝',next:'exp_cheng_reject_direct'},{text:'沉默',next:'exp_cheng_reject_silent'}]};
-scenes['exp_cheng_tease']={text:'"大家都说我喜欢你，说我追你你没同意呢。"\n\n她脸红了："那你……是不是真的喜欢我……"',choices:[{text:'直接拒绝',next:'exp_cheng_reject_direct'},{text:'沉默',next:'exp_cheng_reject_silent'}]};
-scenes['exp_cheng_reject_direct']={text:'"对不起，我不喜欢你。"\n\n她愣了一下，笑了笑："哈……还真是像你会说的话。"\n\n她眼角微红，把信塞到你手里，头也不回地跑开了。\n\n你展开信纸——',next:'exp_cheng_letter_love'};
-scenes['exp_cheng_reject_silent']={text:'你沉默了。\n\n"没有你，就没有我的今天。我真的好喜欢你。"她抱住你，掉着眼泪。你想推开，想了想，算了。\n\n等她平静了，你轻声说："程小涵，你对我是喜欢，还是因为在你最黑暗的时候有人照进来一束光？我不能趁人之危。"\n\n她低着头，把信塞到你手里，鞠了一躬，跑开了。\n\n你展开信纸——',next:'exp_cheng_letter_love'};
-scenes['exp_cheng_letter_love']={text:'你展开信纸，上面是秀气的字迹：\n\n"谢谢你。\n\n你改变了我的人生，给我带来了光芒。\n\n我想抓住这份光芒。\n\n我知道你大概率会拒绝——因为我太了解你了。\n\n没关系。\n\n重点高中见，我在那里等你。"',next:'exp_mid_exam'};
-
-// -- 中考过渡 --
-scenes['exp_mid_exam']={text:'时间转瞬即逝。在实验学校的这九年——孤单，但也不孤单。你冷漠，但你也炽热。\n\n今天就是中考了。你站在考场门口，深吸一口气，往里看了一眼。',choices:[{text:'拼搏，迈向重点高中',next:'exp_exam_key'},{text:'进入普通高中（一定能进）',next:'exp_ending'}]};
-scenes['exp_exam_key']={text:function(){var tf=tfactor(S.talent),hf=Math.min(1,S.health/60),p=Math.round(35*tf*hf+10);return '你决定拼搏。\n\n天赋系数：'+tf+'\n健康修正：'+hf.toFixed(2)+'\n环境加成：+10\n\n预估成功率：'+p+'%\n\n（最终版本将隐藏此概率）';},choices:[{text:'查看结果',next:'exp_ending'}]};
+scenes['exp_enter']={text:'你踏入了实验学校的大门。\n\n这里的教学楼比普通小学新一些，操场也大一些，但你不觉得兴奋。没有许诺在身边，一切都不一样了。你一个人吃饭，一个人走路，一个人在操场的角落看别人三三两两地聊天。\n\n你试着融入过。但在这里，交朋友不是靠一起追蜻蜓、分西瓜就能完成的事。同学们已经形成了自己的圈子，你插不进去。\n\n你也不强求。日子就这么一天天过去。\n\n直到有一天放学的路上——',next:'exp_bully'};
+scenes['exp_bully']={text:'一天放学的路上，你正低头走着。突然三个人拦住了你。为首的那个高个子古铜色的脸上带着一丝不屑："新来的？十块保护费。"\n\n十块钱——妈妈给你吃午饭的。',choices:[{text:'反抗，拼了',eff:function(){S.health=Math.max(0,S.health-5);},next:'exp_fight'},{text:'给他们钱',eff:function(){S.expBullyPaid=true;},next:'exp_pay'}]};
+scenes['exp_fight']={text:'"不给？那就打到你给！"\n\n你拳头紧握，一下子撞在叶伏升胸口上。他气急败坏地一把推开你，剩下两个人一拥而上。你还是少年人，身体都没长开，是济不过他们三个的。但你死死护住自己的钱。\n\n打闹声引来了路人。叶伏升见势不妙，猛地掠过你的钱，吹了一口哨子，三个人一涌而散。你蹲在地上，嘴角破了一点皮，衣衫惨惨的。\n\n（个人健康-5）',next:'exp_parents_see'};
+scenes['exp_pay']={text:'你从兜里掏出那张皱巴巴的十块钱，递了过去。叶伏升接过钱，看也没看，往口袋里一塞："懂事。"\n\n他们转身走了："我们会罩着你的。"你站在原地，攥紧了空荡荡的手心。',next:'exp_home_choice'};
+scenes['exp_home_choice']={text:'在回去的路上，你一直在想——要不要把这件事告诉父母。\n\n父亲正坐在桌前看报纸。母亲在厨房忙着晚饭。你站在客厅门口，张了张嘴。',choices:[{text:'告诉父母',next:'exp_school_handle'},{text:'先不说了',next:'exp_silent_hurt'}]};
+scenes['exp_silent_hurt']={text:'你没有告诉父母这件事，你觉得应该会就这样过去。过了几天，叶伏升又来了。这次你不再给了。你又被打了一顿，拖着伤回到家。父亲一眼就看到了。',next:'exp_parents_see'};
+scenes['exp_parents_see']={text:'你拖着浑身泥土的身子回到家。身上青一块紫一块，根本藏不住。\n\n父亲一眼就看到了。他站起来，报纸掉在地上。他没说话，拿起打火机点了一根烟——点了三次才点着，然后猛地把打火机摔在了地上。"谁打的？"\n\n母亲拿着棉签走过来，让你坐下，一边给你擦伤口一边掉眼泪。',next:'exp_school_handle'};
+scenes['exp_school_handle']={text:'父亲把这件事告知了学校和老师。很快，所有人被叫到了学校。那几个孩子的家长当着所有人的面，对着自家孩子就是一顿拳打脚踢。打完，逼着他们给你道歉。\n\n他们咬牙切齿地说了"对不起"。学校各打五十大板，和了稀泥。\n\n结束后，父亲回头看了你一眼："孩子，以后如果再被欺负了，一定告诉我。"',next:'exp_resentment'};
+scenes['exp_resentment']={text:'第二天上学，叶伏升等人看你的眼神不带任何感情。你知道这事没完。可如果什么都不做，他们迟早会再来找你。',choices:[{text:'找老师保护',next:'exp_teacher_protect'},{text:'让父母接送',next:'exp_parent_protect'}]};
+scenes['exp_teacher_protect']={text:'老师理解了你的担心，答应了你的请求。第三天放学，叶伏升等人果然又出现了。老师远远地跟在你身后，看到情况立刻赶了过来。\n\n校方强制劝退叶伏升等三人，加装监控，安排校车。\n\n你站在校门口，看着那辆新校车缓缓驶来。车上坐满了和你差不多大的孩子，有人冲你招手。你想了想，也招了招手。',next:'exp_time_pass'};
+scenes['exp_parent_protect']={text:'父母每天都准时来接你放学。叶伏升等人等了好几天，一直没找到机会。终于有一天，他们在楼道里堵住了你。老师听到声音赶来。\n\n校方强制劝退叶伏升等三人，加装监控，安排校车。',next:'exp_time_pass'};
+scenes['exp_time_pass']={text:'日子一天天过去。那件事之后，再也没有人找过你的麻烦。校园恢复了平静。但你始终没有交到真正的朋友。\n\n小学的时光就在这种不冷不热的状态中流走了。\n\n你升入了实验学校的中学部。',next:'exp_cheng_intro'};
+scenes['exp_cheng_intro']={text:'这件事之后，你依旧没有要好的朋友，同学之间只是互相应付，你有些信不过其他人，你开始怀念起童年能谈天论地，吐露真心的好朋友了。\n\n但你注意到一个人。一个女生。她和你很像——或者说，她像小时候的你。\n\n她叫程小涵。',next:'exp_cheng_errand'};
+scenes['exp_cheng_errand']={text:'有一天课间，你靠在走廊的墙边喝水。一个声音从不远处传来："喂，小涵，你帮我去买点东西。"一个看起来像"大姐大"的女生正朝程小涵招手。程小涵点了点头，接过钞票，转身朝小卖部的方向走去。\n\n你皱了皱眉。那种感觉你太熟悉了——被支使、被拿捏、因为不知道怎么拒绝所以只能点头。\n\n你没有立刻行动。你看着那个傻丫头的背影拐过走廊尽头，然后放下水杯，不紧不慢地跟了上去。',choices:[{text:'直接问她："为什么要帮别人买东西？"',next:'exp_cheng_ask'},{text:'逗她一下："你帮我也买点东西。"',next:'exp_cheng_tease'}]};
+scenes['exp_cheng_ask']={text:'她吓了一跳："你……你有什么事情吗？我……我叫程小涵。"\n\n"你为什么要帮别人买东西呢？让她们自己去。"\n\n"因为……"她答不上来了，"因为她们是我同学……我不好意思拒绝。"\n\n你摸了摸后脑勺。这丫头真是个讨好型人格。\n\n"跟我来。"她不知道你要干嘛，但还是小碎步跟在你后面。',next:'exp_cheng_confront'};
+scenes['exp_cheng_tease']={text:'她吓了一跳："你……你有什么事情吗？我……我叫程小涵。"\n\n"你帮我也买点东西。"\n\n她脸色有些为难，但还是点了点头："你想买什么呢？……而且你叫什么名字还没说。"\n\n你摸了摸后脑勺。这傻丫头，明明都为难成这样了，还是答应下来了。',next:'exp_cheng_advice'};
+scenes['exp_cheng_confront']={text:'你带着她来到那几个"大姐大"面前。你把那包东西随手往桌上一扔。"你们没长腿吗？下次自己去买。"\n\n那几个女生被你镇住了。你转身就走。走到教室门口的时候，你停下来："我开的这个好头，自己把握住。"',next:'exp_cheng_change'};
+scenes['exp_cheng_advice']={text:'你让她把那袋东西放在旁边的台阶上。然后你看着她的眼睛："你不想做的事情，就不要接。你这样强迫自己去讨好别人，伤害的只会是你自己。"\n\n程小涵愣住了。"下次别人让你干嘛的时候，试着拒绝。你是为了自己而活，不是为了别人。"\n\n你的话像一颗小石头扔进了她心里那潭死水里。她站在原地，很久没有说话。',next:'exp_cheng_change'};
+scenes['exp_cheng_change']={text:'几天后的课间，你又看到了同样的场景。那几个"大姐大"又找到了程小涵。但这一次——"我不去。"程小涵的声音不大，但没有发抖，"你们自己去吧。"\n\n你远远看着这一幕，心里涌上一阵欣慰。她做到了。但那帮"大姐大"脸上的表情开始变得难看起来。',choices:[{text:'亲自出马，制止她们',eff:function(){S.chengProtect=true;},next:'exp_cheng_protect'},{text:'让校方处理',eff:function(){S.chengProtect=false;},next:'exp_cheng_report'}]};
+scenes['exp_cheng_protect']={text:'你两步并一步赶了过去。领头的"大姐大"右手高高扬起，眼看就要一巴掌扇下来。程小涵闭上眼，缩着肩膀。\n\n但预想中的疼痛没有来。她睁开眼——你的身影挡在她面前，右手稳稳地握住了那只即将落下的手腕。"够了。"\n\n程小涵看着你的背影，眼眶忽然就湿了。从来没有人替她挡过什么。',next:'exp_rumors'};
+scenes['exp_cheng_report']={text:'你看了一眼那帮人的架势，转身去了教师办公室。老师赶到的时候，"大姐大"正揪着程小涵的衣领。老师一声呵斥，几个人立刻松了手。\n\n事后，老师把那几个人叫到办公室谈了话。程小涵后来知道了是你去叫的老师。她每次在走廊上遇到你，都会冲你笑一下。',next:'exp_rumors_b'};
+scenes['exp_rumors']={text:'事情很快就结束了，她们打算动手的事情被学校公开处罚，之后也不再有人强迫任何人做他不想做的事了。\n\n但这件事也让学校里传开了舆论，说独来独往的你和程小涵有情况。你没当回事。',next:'exp_winter_apology'};
+scenes['exp_rumors_b']={text:'事情很快就结束了，教导主任彻底调查这件事之后，惩罚了这几个大姐大，然后在全校大会上严肃的警告了这件事情。\n\n但这件事也让学校里传开了舆论，说独来独往的你和程小涵有情况。',next:'exp_winter_apology_b'};
+scenes['exp_winter_apology']={text:'初三上的冬天，程小涵找到你，对关于她对你造成的舆论表示很抱歉。她现在和那个时候完全不同了，整个人自信了起来，不再因为一些小事而内耗。你看到她的变化很欣慰，也好像看到曾经那个被欺负的自己长大了。\n\n"关于那些传言……对不起，给你添麻烦了。"',choices:[{text:'"还好吧，我不在意。你状态好多了。"',next:'exp_cheng_growth'},{text:'"托你的福我可惨了，大家都说我喜欢你呢。"',next:'exp_cheng_tease_back'}]};
+scenes['exp_winter_apology_b']={text:'初三上的冬天，程小涵找到你，对关于她对你造成的舆论表示很抱歉。她现在和那个时候完全不同了，整个人自信了起来。',choices:[{text:'"还好吧，我不在意。你状态好多了。"',next:'exp_cheng_growth'},{text:'"托你的福我可惨了，大家都说我喜欢你呢。"',next:'exp_cheng_tease_back'}]};
+scenes['exp_cheng_growth']={text:'你还是依旧的冷酷样子，可她就喜欢你这款。她笑了。"谢谢你，是你改变了我的人生。"\n\n她深吸一口气："我喜欢你，请和我在一起。"',choices:[{text:'直接拒绝',next:'exp_cheng_reject_direct'},{text:'沉默',next:'exp_cheng_silent'}]};
+scenes['exp_cheng_tease_back']={text:'她脸红的低下了头。"那你……是不是真的喜欢我……"',choices:[{text:'直接拒绝',next:'exp_cheng_reject_direct'},{text:'沉默',next:'exp_cheng_silent'}]};
+scenes['exp_cheng_reject_direct']={text:'她被你突如其来的拒绝整的愣了一下，但还是尴尬的笑了笑。"哈……还真是像你会说的话。"她眼角微红，把信塞到你手里，头也不回地跑开了。\n\n你展开信纸——',next:'exp_cheng_letter'};
+scenes['exp_cheng_silent']={text:'她看着你的沉默，有些不安，但她已经说出口，她想争取，不想放过任何机会。她抱住你，掉着眼泪。\n\n你叫住了她。"程小涵，你对我是喜欢，还是因为在你最黑暗的时候有人照进来一束光？我不能趁人之危。那会伤害你。"\n\n她低着头，把信塞到你手里，鞠了一躬，跑开了。\n\n你展开信纸——',next:'exp_cheng_letter'};
+scenes['exp_cheng_letter']={text:'你展开信纸，上面是秀气的字迹：\n\n"谢谢你。你改变了我的人生，给我带来了光芒。\n\n如果你没有朋友——我可以做你的知心朋友。\n\n我知道你大概率会拒绝——因为我太了解你了。没关系。\n\n重点高中见，我在那里等你。"',next:'exp_exam'};
+scenes['exp_exam']={text:'时间转瞬即逝。在实验学校的这九年——孤单，但也不孤单。你冷漠，但你也炽热。\n\n今天就是中考了。你站在考场门口，深吸一口气，往里看了一眼。',choices:[{text:'拼搏，迈向重点高中',next:'exp_exam_key'},{text:'进入普通高中',next:'exp_ending'}]};
+scenes['exp_exam_key']={text:function(){var tf=tfactor(S.talent),hf=Math.min(1,S.health/60),p=Math.round(35*tf*hf+10);return '你决定报考重点高中。\n\n天赋系数：'+tf+'\n健康修正：'+hf.toFixed(2)+'\n环境加成：+10\n\n预估成功率：'+p+'%';},choices:[{text:'查看结果',next:'exp_ending'}]};
 scenes['exp_ending']={text:'【实验学校线 · 第一章完】\n\n你的人生，才刚刚开始。\n\n未完待续……',isEnding:true};
 
 // ====== START ======
